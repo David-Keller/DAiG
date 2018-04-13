@@ -3,7 +3,7 @@ import math
 from igraph import *
 import pandas as pd
 
-df = pd.read_csv('/Users/davidjia/Desktop/SpeedDatingData.csv', encoding = "ISO-8859-1")
+df = pd.read_csv('SpeedDatingData.csv', encoding = "ISO-8859-1")
 iid = df['iid']
 personid = df['id']
 pid = df['pid']
