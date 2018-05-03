@@ -1,0 +1,187 @@
+---
+title: "Prediction Algorithm using Network Statistics"
+author: "David Jia, David Keller, Alvaro Gonzalez"
+date: "May 2, 2018"
+output: html_document
+---
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(prompt=TRUE, comment="", echo=TRUE)
+```
+
+The igraph library is necessary.
+
+```{r collapse=TRUE, warning=FALSE}
+library(igraph)
+```
+
+The data set used was a Speed Dating one.
+
+```{r}
+dat = read.csv("SpeedDatingData.csv")
+```
+
+```{r, echo=FALSE}
+# add negative one imputation
+impute_negative_one = function(x) {
+  stopifnot(length(x) > 0 && sum(!is.na(x)) > 0)
+  x[is.na(x)] = -1
+  return(x)
+}
+
+# add mean imputation
+impute_mean = function(x) {
+  stopifnot(length(x) > 0 && sum(!is.na(x)) > 0)
+  x[is.na(x)] = median(x, na.rm=TRUE)
+  return(x)
+}
+
+split_data = function(dat, frac=c(0.75, 0.25)) {
+  # at least one set must be specified
+  k = length(frac)
+  stopifnot(k > 0)
+  
+  n = nrow(dat)
+  frac = frac/(sum(frac))
+  starts = c(1, round(cumsum(frac) * n)[-k])
+  ends = c(starts[-1]-1,n)
+  samp = sample(1:n)
+  data_sets = list()
+  for (i in 1:k) {
+    data_sets[[i]] = dat[samp[starts[i]:ends[i]],]
+  }
+  return(data_sets)
+} 
+
+layout.by.attr <- function(graph, wc, cluster.strength=1,layout=layout.auto) {  
+  g <- graph.edgelist(get.edgelist(graph)) # create a lightweight copy of graph w/o the attributes.
+  E(g)$weight <- 1
+  
+  attr <- cbind(id=1:vcount(g), val=wc)
+  g <- g + vertices(unique(attr[,2])) + igraph::edges(unlist(t(attr)), weight=cluster.strength)
+  
+  l <- layout(g, weights=E(g)$weight)[1:vcount(graph),]
+  return(l)
+}
+```
+
+### Creating Second Data Set
+
+Filling in some of the missing data from the original data set and create a second data set that has the attribute of each individual node. The orgiinal data set had attributes from the pairings of two nodes.
+
+```{r}
+dat$age = impute_mean(dat$age)
+dat$age_o = impute_mean(dat$age_o)
+dat$race = impute_negative_one(dat$race)
+
+dat2 = data.frame(iid=unique(dat$iid))
+dat2$age = aggregate(age ~ iid, data = dat, mean)$age
+dat2$gender = aggregate(gender ~ iid, data = dat, mean)$gender
+dat2$race = aggregate(race ~ iid, data = dat, mean)$race
+dat2$hasMatch = aggregate(match ~ iid, data = dat, max)$match
+dat2$metWithSameRace = aggregate(samerace ~ iid, data = dat, max)$samerace
+```
+
+```{r, echo=FALSE}
+iidOfSameRace = dat[dat$samerace == 1,]$iid
+pidOfSameRace = dat[dat$samerace == 1,]$pid
+
+edges = c()
+
+i = 0
+while (i < length(iidOfSameRace)) {
+  iid = iidOfSameRace[i+1]
+  pid = pidOfSameRace[i+1]
+  if (iid > 117) {
+    iid = iid - 1
+  }
+  if (is.na(pid)) {
+    pid = iid
+  }
+  if (pid > 117 & !is.na(pid)) {
+    pid = pid - 1
+  }
+  edges = c(edges, iid)
+  edges = c(edges, pid)
+  i = i + 1
+}
+```
+
+### Graph
+
+The graph created here shows the connections between nodes where they met with someone of the same race.
+
+```{r, echo=FALSE}
+g = make_empty_graph(n = length(unique(dat$iid)), directed=FALSE) %>% add_edges(edges)
+g = simplify(g, remove.multiple=TRUE)
+V(g)$label = unique(dat$iid)
+plot(g, vertex.size=2, edge.width=1, edge.color="red", vertex.label.cex=0.5, vertex.label.dist=0.4, vertex.label.degree=-pi/2, layout=layout.by.attr(g, wc=1))
+```
+
+The number of nodes in each component was recorded and assigned to the respective nodes in the data set.
+
+```{r}
+compDF = data.frame(components(g)$membership)
+compTableDF = data.frame(table(components(g)$membership))
+nameMatchVar = setNames(as.character(compTableDF$Freq), compTableDF$Var1)
+totalCompDF = data.frame(lapply(compDF, function(i) nameMatchVar[i]))
+componentTotalNodes = totalCompDF$components.g..membership
+
+# change to numeric
+dat2$componentTotalNodes = as.numeric(paste(componentTotalNodes))
+```
+
+A seed was set so that this report would stay consistent. Testing was done without setting a seed.
+
+```{r}
+set.seed(321)
+```
+
+The data was split into training and test data with a 4:1 ratio.
+
+```{r}
+# get test and training sets
+splits = split_data(dat2, frac=c(4,1))
+tr_data = splits[[1]]
+te_data = splits[[2]]
+```
+
+### Predictions
+
+This particular model was made using age, gender, and if they met with someone from the same race as predictors to determine if they had a successful match.
+
+```{r}
+fit = glm(hasMatch ~ age + gender + metWithSameRace, data=tr_data, family=binomial)
+```
+
+Logistic Regression was used here with a threshold of >0.7. A confusion matrix was created to check the accuracy.
+
+```{r}
+# compute confusion matrix
+y = predict(fit, newdata=te_data, type="response")
+predicts = as.numeric(y > 0.7)
+actuals = te_data$hasMatch
+conf_mtx = table(predicts, actuals)
+conf_mtx
+mean(predicts == actuals)
+```
+
+This model was made with the same predictors as the first model except it also uses the total number of nodes in the component they belong in.
+
+```{r}
+fit2 = glm(hasMatch ~ age + gender + metWithSameRace + componentTotalNodes, data=tr_data, family=binomial)
+```
+
+Logistic Regression was used here as well with the same threshold.
+
+```{r}
+# compute confusion matrix
+y = predict(fit2, newdata=te_data, type="response")
+predicts = as.numeric(y > 0.7)
+actuals = te_data$hasMatch
+conf_mtx = table(predicts, actuals)
+conf_mtx
+mean(predicts == actuals)
+```
+
+### Conclusion
