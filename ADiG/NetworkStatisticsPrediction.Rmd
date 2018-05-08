@@ -13,6 +13,7 @@ The igraph library is necessary.
 
 ```{r collapse=TRUE, warning=FALSE}
 library(igraph)
+library(pROC)
 ```
 
 The data set used was a Speed Dating one.
@@ -126,15 +127,26 @@ compTableDF = data.frame(table(components(g)$membership))
 nameMatchVar = setNames(as.character(compTableDF$Freq), compTableDF$Var1)
 totalCompDF = data.frame(lapply(compDF, function(i) nameMatchVar[i]))
 componentTotalNodes = totalCompDF$components.g..membership
+dat2$componentNumber = compDF$components.g..membership
+averageAge = aggregate(age ~ componentNumber, data=dat2, mean)
+nameMatchVar2 = setNames(as.character(averageAge$age), averageAge$componentNumber)
+averageAgeDF = data.frame(lapply(compDF, function(i) nameMatchVar2[i]))
+averageAgeOfComponent = averageAgeDF$components.g..membership
+percentOfMales = aggregate(gender ~ componentNumber, data=dat2, mean)
+nameMatchVar3 = setNames(as.character(percentOfMales$gender), percentOfMales$componentNumber)
+percentOfMalesDF = data.frame(lapply(compDF, function(i) nameMatchVar3[i]))
+percentOfMalesInComponent = percentOfMalesDF$components.g..membership
 
 # change to numeric
 dat2$componentTotalNodes = as.numeric(paste(componentTotalNodes))
+dat2$averageAgeOfComponent = round(as.numeric(paste(averageAgeOfComponent)))
+dat2$percentOfMalesInComponent = round(as.numeric(paste(percentOfMalesInComponent)),3)
 ```
 
 A seed was set so that this report would stay consistent. Testing was done without setting a seed.
 
 ```{r}
-set.seed(321)
+set.seed(123)
 ```
 
 The data was split into training and test data with a 4:1 ratio.
@@ -148,10 +160,10 @@ te_data = splits[[2]]
 
 ### Predictions
 
-This particular model was made using age, gender, and if they met with someone from the same race as predictors to determine if they had a successful match.
+This particular model was made using age and gender as predictors to determine if they had a successful match.
 
 ```{r}
-fit = glm(hasMatch ~ age + gender + metWithSameRace, data=tr_data, family=binomial)
+fit = glm(hasMatch ~ age + gender, data=tr_data, family=binomial)
 ```
 
 Logistic Regression was used here with a threshold of >0.7. A confusion matrix was created to check the accuracy.
@@ -169,19 +181,33 @@ mean(predicts == actuals)
 This model was made with the same predictors as the first model except it also uses the total number of nodes in the component they belong in.
 
 ```{r}
-fit2 = glm(hasMatch ~ age + gender + metWithSameRace + componentTotalNodes, data=tr_data, family=binomial)
+roc_obj = roc(actuals, y)
+auc(roc_obj)
+plot(roc_obj, main="ROC", xlim=c(1,0), ylim=c(0,1), col="red4")
+```
+
+```{r}
+fit2 = glm(hasMatch ~ averageAgeOfComponent + percentOfMalesInComponent + componentTotalNodes, data=tr_data, family=binomial)
 ```
 
 Logistic Regression was used here as well with the same threshold.
 
 ```{r}
 # compute confusion matrix
-y = predict(fit2, newdata=te_data, type="response")
-predicts = as.numeric(y > 0.7)
+y2 = predict(fit2, newdata=te_data, type="response")
+predicts = as.numeric(y2 > 0.7)
 actuals = te_data$hasMatch
 conf_mtx = table(predicts, actuals)
 conf_mtx
 mean(predicts == actuals)
 ```
 
+```{r}
+roc_obj2 = roc(actuals, y2)
+auc(roc_obj2)
+plot(roc_obj2, main="ROC", xlim=c(1,0), ylim=c(0,1), col="red4")
+```
+
 ### Conclusion
+
+From what could be seen, the AUC for the prediction that uses graph component aggregates appears to be commonly higher. This has been tested with a couple of different seeds and there were only a couple of occurrances where the AUC for using node information instead of graph aggregates had a higher AUC. This shows that using the AUC has a higher potential of being more accurate and effective in making predictions.
