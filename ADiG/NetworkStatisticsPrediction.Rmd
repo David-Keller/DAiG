@@ -90,6 +90,23 @@ dat$age = impute_mean(dat$age)
 dat$age_o = impute_mean(dat$age_o)
 dat$race = impute_zero(dat$race)
 dat$imprace = impute_mean(dat$imprace)
+dat$sports = impute_mean(dat$sports)
+dat$tvsports = impute_mean(dat$tvsports)
+dat$exercise = impute_mean(dat$exercise)
+dat$dining = impute_mean(dat$dining)
+dat$museums = impute_mean(dat$museums)
+dat$hiking = impute_mean(dat$hiking)
+dat$gaming = impute_mean(dat$gaming)
+dat$clubbing = impute_mean(dat$clubbing)
+dat$reading = impute_mean(dat$reading)
+dat$tv = impute_mean(dat$tv)
+dat$theater = impute_mean(dat$theater)
+dat$movies = impute_mean(dat$movies)
+dat$concerts = impute_mean(dat$concerts)
+dat$music = impute_mean(dat$music)
+dat$shopping = impute_mean(dat$shopping)
+dat$yoga = impute_mean(dat$yoga)
+
 
 dat2 = data.frame(iid=unique(dat$iid))
 dat2$age = aggregate(age ~ iid, data = dat, mean)$age
@@ -98,6 +115,22 @@ dat2$race = aggregate(race ~ iid, data = dat, mean)$race
 dat2$hasMatch = aggregate(match ~ iid, data = dat, max)$match
 dat2$metWithSameRace = aggregate(samerace ~ iid, data = dat, max)$samerace
 dat2$imprace = aggregate(imprace ~ iid, data = dat, mean)$imprace
+dat2$sports = aggregate(sports ~ iid, data = dat, mean)$sports
+dat2$tvsports = aggregate(tvsports ~ iid, data = dat, mean)$tvsports
+dat2$exercise = aggregate(exercise ~ iid, data = dat, mean)$exercise
+dat2$dining = aggregate(dining ~ iid, data = dat, mean)$dining
+dat2$museums = aggregate(museums ~ iid, data = dat, mean)$museums
+dat2$hiking = aggregate(hiking ~ iid, data = dat, mean)$hiking
+dat2$gaming = aggregate(gaming ~ iid, data = dat, mean)$gaming
+dat2$clubbing = aggregate(clubbing ~ iid, data = dat, mean)$clubbing
+dat2$reading = aggregate(reading ~ iid, data = dat, mean)$reading
+dat2$tv = aggregate(tv ~ iid, data = dat, mean)$tv
+dat2$theater = aggregate(theater ~ iid, data = dat, mean)$theater
+dat2$movies = aggregate(movies ~ iid, data = dat, mean)$movies
+dat2$concerts = aggregate(concerts ~ iid, data = dat, mean)$concerts
+dat2$music = aggregate(music ~ iid, data = dat, mean)$music
+dat2$shopping = aggregate(shopping ~ iid, data = dat, mean)$shopping
+dat2$yoga = aggregate(yoga ~ iid, data = dat, mean)$yoga
 ```
 
 ```{r, echo=FALSE}
@@ -157,12 +190,92 @@ averageImprace = aggregate(imprace ~ componentNumber, data=dat2, mean)
 nameMatchVar4 = setNames(as.character(averageImprace$imprace), averageImprace$componentNumber)
 averageImpraceDF = data.frame(lapply(compDF, function(i) nameMatchVar4[i]))
 averageImpraceOfComponent = averageImpraceDF$components.g..membership
+averageSports = aggregate(sports ~ componentNumber, data=dat2, mean)
+nameMatchVar5 = setNames(as.character(averageSports$sports), averageSports$componentNumber)
+averageSportsDF = data.frame(lapply(compDF, function(i) nameMatchVar5[i]))
+averageSportsOfComponent = averageSportsDF$components.g..membership
+averageTvsports = aggregate(tvsports ~ componentNumber, data=dat2, mean)
+nameMatchVar6 = setNames(as.character(averageTvsports$tvsports), averageTvsports$componentNumber)
+averageTvsportsDF = data.frame(lapply(compDF, function(i) nameMatchVar6[i]))
+averageTvsportsOfComponent = averageTvsportsDF$components.g..membership
+averageExercise = aggregate(exercise ~ componentNumber, data=dat2, mean)
+nameMatchVar7 = setNames(as.character(averageExercise$exercise), averageExercise$componentNumber)
+averageExerciseDF = data.frame(lapply(compDF, function(i) nameMatchVar7[i]))
+averageExerciseOfComponent = averageExerciseDF$components.g..membership
+averageDining = aggregate(dining ~ componentNumber, data=dat2, mean)
+nameMatchVar8 = setNames(as.character(averageDining$dining), averageDining$componentNumber)
+averageDiningDF = data.frame(lapply(compDF, function(i) nameMatchVar8[i]))
+averageDiningOfComponent = averageDiningDF$components.g..membership
+averageMuseums = aggregate(museums ~ componentNumber, data=dat2, mean)
+nameMatchVar9 = setNames(as.character(averageMuseums$museums), averageMuseums$componentNumber)
+averageMuseumsDF = data.frame(lapply(compDF, function(i) nameMatchVar9[i]))
+averageMuseumsOfComponent = averageMuseumsDF$components.g..membership
+averageHiking = aggregate(hiking ~ componentNumber, data=dat2, mean)
+nameMatchVar10 = setNames(as.character(averageHiking$hiking), averageHiking$componentNumber)
+averageHikingDF = data.frame(lapply(compDF, function(i) nameMatchVar10[i]))
+averageHikingOfComponent = averageHikingDF$components.g..membership
+averageGaming = aggregate(gaming ~ componentNumber, data=dat2, mean)
+nameMatchVar11 = setNames(as.character(averageGaming$gaming), averageGaming$componentNumber)
+averageGamingDF = data.frame(lapply(compDF, function(i) nameMatchVar11[i]))
+averageGamingOfComponent = averageGamingDF$components.g..membership
+averageClubbing = aggregate(clubbing ~ componentNumber, data=dat2, mean)
+nameMatchVar12 = setNames(as.character(averageClubbing$clubbing), averageClubbing$componentNumber)
+averageClubbingDF = data.frame(lapply(compDF, function(i) nameMatchVar12[i]))
+averageClubbingOfComponent = averageClubbingDF$components.g..membership
+averageReading = aggregate(reading ~ componentNumber, data=dat2, mean)
+nameMatchVar13 = setNames(as.character(averageReading$reading), averageReading$componentNumber)
+averageReadingDF = data.frame(lapply(compDF, function(i) nameMatchVar13[i]))
+averageReadingOfComponent = averageReadingDF$components.g..membership
+averageTv = aggregate(tv ~ componentNumber, data=dat2, mean)
+nameMatchVar14 = setNames(as.character(averageTv$tv), averageTv$componentNumber)
+averageTvDF = data.frame(lapply(compDF, function(i) nameMatchVar14[i]))
+averageTvOfComponent = averageTvDF$components.g..membership
+averageTheater = aggregate(theater ~ componentNumber, data=dat2, mean)
+nameMatchVar15 = setNames(as.character(averageTheater$theater), averageTheater$componentNumber)
+averageTheaterDF = data.frame(lapply(compDF, function(i) nameMatchVar15[i]))
+averageTheaterOfComponent = averageTheaterDF$components.g..membership
+averageMovies = aggregate(movies ~ componentNumber, data=dat2, mean)
+nameMatchVar16 = setNames(as.character(averageMovies$movies), averageMovies$componentNumber)
+averageMoviesDF = data.frame(lapply(compDF, function(i) nameMatchVar16[i]))
+averageMoviesOfComponent = averageMoviesDF$components.g..membership
+averageConcerts = aggregate(concerts ~ componentNumber, data=dat2, mean)
+nameMatchVar17 = setNames(as.character(averageConcerts$concerts), averageConcerts$componentNumber)
+averageConcertsDF = data.frame(lapply(compDF, function(i) nameMatchVar17[i]))
+averageConcertsOfComponent = averageConcertsDF$components.g..membership
+averageMusic = aggregate(music ~ componentNumber, data=dat2, mean)
+nameMatchVar18 = setNames(as.character(averageMusic$music), averageMusic$componentNumber)
+averageMusicDF = data.frame(lapply(compDF, function(i) nameMatchVar18[i]))
+averageMusicOfComponent = averageMusicDF$components.g..membership
+averageShopping = aggregate(shopping ~ componentNumber, data=dat2, mean)
+nameMatchVar19 = setNames(as.character(averageShopping$shopping), averageShopping$componentNumber)
+averageShoppingDF = data.frame(lapply(compDF, function(i) nameMatchVar19[i]))
+averageShoppingOfComponent = averageShoppingDF$components.g..membership
+averageYoga = aggregate(yoga ~ componentNumber, data=dat2, mean)
+nameMatchVar20 = setNames(as.character(averageYoga$yoga), averageYoga$componentNumber)
+averageYogaDF = data.frame(lapply(compDF, function(i) nameMatchVar20[i]))
+averageYogaOfComponent = averageYogaDF$components.g..membership
 
 # change to numeric
 dat2$componentTotalNodes = as.numeric(paste(componentTotalNodes))
 dat2$averageAgeOfComponent = round(as.numeric(paste(averageAgeOfComponent)))
 dat2$percentOfMalesInComponent = round(as.numeric(paste(percentOfMalesInComponent)),3)
 dat2$averageImpraceOfComponent = round(as.numeric(paste(averageImpraceOfComponent)),3)
+dat2$averageSportsOfComponent = round(as.numeric(paste(averageSportsOfComponent)),3)
+dat2$averageTvsportsOfComponent = round(as.numeric(paste(averageTvsportsOfComponent)),3)
+dat2$averageExerciseOfComponent = round(as.numeric(paste(averageExerciseOfComponent)),3)
+dat2$averageDiningOfComponent = round(as.numeric(paste(averageDiningOfComponent)),3)
+dat2$averageMuseumsOfComponent = round(as.numeric(paste(averageMuseumsOfComponent)),3)
+dat2$averageHikingOfComponent = round(as.numeric(paste(averageHikingOfComponent)),3)
+dat2$averageGamingOfComponent = round(as.numeric(paste(averageGamingOfComponent)),3)
+dat2$averageClubbingOfComponent = round(as.numeric(paste(averageClubbingOfComponent)),3)
+dat2$averageReadingOfComponent = round(as.numeric(paste(averageReadingOfComponent)),3)
+dat2$averageTvOfComponent = round(as.numeric(paste(averageTvOfComponent)),3)
+dat2$averageTheaterOfComponent = round(as.numeric(paste(averageTheaterOfComponent)),3)
+dat2$averageMoviesOfComponent = round(as.numeric(paste(averageMoviesOfComponent)),3)
+dat2$averageConcertsOfComponent = round(as.numeric(paste(averageConcertsOfComponent)),3)
+dat2$averageMusicOfComponent = round(as.numeric(paste(averageMusicOfComponent)),3)
+dat2$averageShoppingOfComponent = round(as.numeric(paste(averageShoppingOfComponent)),3)
+dat2$averageYogaOfComponent = round(as.numeric(paste(averageYogaOfComponent)),3)
 ```
 
 A seed was set so that this report would stay consistent. Testing was done without setting a seed.
@@ -182,10 +295,10 @@ te_data = splits[[2]]
 
 ### Predictions using Logistic Regression
 
-This particular model was made using age, gender, race, and imprace as predictors to determine if they had a successful match. Imprace rated on a scale from 1-10 on how important it is that they date someone of the same race.
+This particular model was made using age, gender, imprace, sports, exercise, gaming, clubbing, and tv as predictors to determine if they had a successful match. Imprace rated on a scale from 1-10 on how important it is that they date someone of the same race. The activites used as features after imprace indicate how interested an individual is in those activities
 
 ```{r}
-fit = glm(hasMatch ~ age + gender + race + imprace, data=tr_data, family=binomial)
+fit = glm(hasMatch ~ age + gender + imprace + sports + exercise + gaming + clubbing + tv, data=tr_data, family=binomial)
 ```
 
 Logistic Regression was used here with a threshold of >0.7. A confusion matrix was created to check the accuracy.
@@ -209,7 +322,7 @@ plot(roc_obj, main="ROC", xlim=c(1,0), ylim=c(0,1), col="red4")
 ```
 
 ```{r}
-fit2 = glm(hasMatch ~ averageAgeOfComponent + percentOfMalesInComponent + averageImpraceOfComponent + componentTotalNodes, data=tr_data, family=binomial)
+fit2 = glm(hasMatch ~ averageAgeOfComponent + percentOfMalesInComponent + averageImpraceOfComponent + averageSportsOfComponent + averageExerciseOfComponent + averageGamingOfComponent + averageClubbingOfComponent + averageTvOfComponent + componentTotalNodes, data=tr_data, family=binomial)
 ```
 
 Logistic Regression was used here as well with the same threshold.
@@ -235,7 +348,7 @@ plot(roc_obj2, main="ROC", xlim=c(1,0), ylim=c(0,1), col="red4")
 We tried to make predictions using the same predictors that were used in the Logistic Regression predictions.
 
 ```{r}
-fit = rpart(hasMatch ~ age + gender + race + imprace, dat = tr_data, method = "class", control=rpart.control(minsplit=5, minbucket=3, cp=0.01))
+fit = rpart(hasMatch ~ age + gender + imprace + sports + exercise + gaming + clubbing + tv, dat = tr_data, method = "class", control=rpart.control(minsplit=5, minbucket=3, cp=0.01))
 prp(fit, extra=106, varlen= 0,faclen=0, main = "", box.col = c("paleturquoise", "pink")[fit$frame$yval])
 ```
 
@@ -259,7 +372,7 @@ plot(roc_obj, main="ROC", xlim=c(1,0), ylim=c(0,1), col="red4")
 This is the second Classification Tree that uses graph component aggregates.
 
 ```{r}
-fit2 = rpart(hasMatch ~ averageAgeOfComponent + percentOfMalesInComponent + averageImpraceOfComponent + componentTotalNodes, dat = tr_data, method = "class", control=rpart.control(minsplit=1, minbucket=1, cp=0.01))
+fit2 = rpart(hasMatch ~ averageAgeOfComponent + percentOfMalesInComponent + averageImpraceOfComponent + averageSportsOfComponent + averageExerciseOfComponent + averageGamingOfComponent + averageClubbingOfComponent + averageTvOfComponent + componentTotalNodes, dat = tr_data, method = "class", control=rpart.control(minsplit=1, minbucket=1, cp=0.01))
 prp(fit2, extra=106, varlen= 0,faclen=0, main = "", box.col = c("paleturquoise", "pink")[fit$frame$yval])
 ```
 
@@ -272,7 +385,7 @@ table(actual, predicted)
 mean(actual == predicted)
 ```
 
-The AUC for this model is also very poor and it is only .51.
+The AUC for this model is also fairly poor as it is under .60.
 
 ```{r}
 roc_obj2 = roc(actual, as.numeric(predicted) - 1)
@@ -282,4 +395,4 @@ plot(roc_obj2, main="ROC", xlim=c(1,0), ylim=c(0,1), col="red4")
 
 ### Conclusion
 
-From what could be seen, the AUC for the prediction that uses graph component aggregates appears to be commonly higher in the case of Logistic Regression. This has been tested with a couple of different seeds and there were only a couple of occurrances where the AUC for using node information instead of graph aggregates had a higher AUC. Classification Trees were not very effective when making predictions however that can be because of this particular data set. This shows that using the AUC has a higher potential of being more accurate and effective in making predictions when using Logistic Regression.
+From what could be seen, the AUC for the prediction that uses graph component aggregates appears to be commonly higher in the case of Logistic Regression. This has been tested with a couple of different seeds and there were only a couple of occurrances where the AUC for using node information instead of graph aggregates had a higher AUC. There are also many more features that can be used when creating these models. Classification Trees were not very effective when making predictions however that can be because of this particular data set. This shows that using the AUC has a higher potential of being more accurate and effective in making predictions when using Logistic Regression.
