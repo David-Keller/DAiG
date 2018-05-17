@@ -1,7 +1,7 @@
 ---
 title: "Prediction Algorithm using Network Statistics"
 author: "David Jia, David Keller, Alvaro Gonzalez"
-date: "May 2, 2018"
+date: "May 17, 2018"
 output: html_document
 ---
 
@@ -14,15 +14,24 @@ The igraph library is necessary.
 ```{r collapse=TRUE, warning=FALSE}
 library(igraph)
 library(pROC)
+library(rpart)
+library(rpart.plot)
 ```
 
 The data set used was a Speed Dating one.
 
 ```{r}
-dat = read.csv("SpeedDatingData.csv")
+dat = read.csv("https://raw.githubusercontent.com/David-Keller/DAiG/master/ADiG/SpeedDatingData.csv")
 ```
 
 ```{r, echo=FALSE}
+# add zero imputation
+impute_zero = function(x) {
+  stopifnot(length(x) > 0 && sum(!is.na(x)) > 0)
+  x[is.na(x)] = 0
+  return(x)
+}
+
 # add negative one imputation
 impute_negative_one = function(x) {
   stopifnot(length(x) > 0 && sum(!is.na(x)) > 0)
@@ -54,6 +63,12 @@ split_data = function(dat, frac=c(0.75, 0.25)) {
   return(data_sets)
 } 
 
+# Find most common value, return first value if tie
+Mode <- function(x) {
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+
 layout.by.attr <- function(graph, wc, cluster.strength=1,layout=layout.auto) {  
   g <- graph.edgelist(get.edgelist(graph)) # create a lightweight copy of graph w/o the attributes.
   E(g)$weight <- 1
@@ -73,7 +88,8 @@ Filling in some of the missing data from the original data set and create a seco
 ```{r}
 dat$age = impute_mean(dat$age)
 dat$age_o = impute_mean(dat$age_o)
-dat$race = impute_negative_one(dat$race)
+dat$race = impute_zero(dat$race)
+dat$imprace = impute_mean(dat$imprace)
 
 dat2 = data.frame(iid=unique(dat$iid))
 dat2$age = aggregate(age ~ iid, data = dat, mean)$age
@@ -81,6 +97,7 @@ dat2$gender = aggregate(gender ~ iid, data = dat, mean)$gender
 dat2$race = aggregate(race ~ iid, data = dat, mean)$race
 dat2$hasMatch = aggregate(match ~ iid, data = dat, max)$match
 dat2$metWithSameRace = aggregate(samerace ~ iid, data = dat, max)$samerace
+dat2$imprace = aggregate(imprace ~ iid, data = dat, mean)$imprace
 ```
 
 ```{r, echo=FALSE}
@@ -136,17 +153,22 @@ percentOfMales = aggregate(gender ~ componentNumber, data=dat2, mean)
 nameMatchVar3 = setNames(as.character(percentOfMales$gender), percentOfMales$componentNumber)
 percentOfMalesDF = data.frame(lapply(compDF, function(i) nameMatchVar3[i]))
 percentOfMalesInComponent = percentOfMalesDF$components.g..membership
+averageImprace = aggregate(imprace ~ componentNumber, data=dat2, mean)
+nameMatchVar4 = setNames(as.character(averageImprace$imprace), averageImprace$componentNumber)
+averageImpraceDF = data.frame(lapply(compDF, function(i) nameMatchVar4[i]))
+averageImpraceOfComponent = averageImpraceDF$components.g..membership
 
 # change to numeric
 dat2$componentTotalNodes = as.numeric(paste(componentTotalNodes))
 dat2$averageAgeOfComponent = round(as.numeric(paste(averageAgeOfComponent)))
 dat2$percentOfMalesInComponent = round(as.numeric(paste(percentOfMalesInComponent)),3)
+dat2$averageImpraceOfComponent = round(as.numeric(paste(averageImpraceOfComponent)),3)
 ```
 
 A seed was set so that this report would stay consistent. Testing was done without setting a seed.
 
 ```{r}
-set.seed(123)
+set.seed(231)
 ```
 
 The data was split into training and test data with a 4:1 ratio.
@@ -158,12 +180,12 @@ tr_data = splits[[1]]
 te_data = splits[[2]]
 ```
 
-### Predictions
+### Predictions using Logistic Regression
 
-This particular model was made using age and gender as predictors to determine if they had a successful match.
+This particular model was made using age, gender, race, and imprace as predictors to determine if they had a successful match. Imprace rated on a scale from 1-10 on how important it is that they date someone of the same race.
 
 ```{r}
-fit = glm(hasMatch ~ age + gender, data=tr_data, family=binomial)
+fit = glm(hasMatch ~ age + gender + race + imprace, data=tr_data, family=binomial)
 ```
 
 Logistic Regression was used here with a threshold of >0.7. A confusion matrix was created to check the accuracy.
@@ -187,7 +209,7 @@ plot(roc_obj, main="ROC", xlim=c(1,0), ylim=c(0,1), col="red4")
 ```
 
 ```{r}
-fit2 = glm(hasMatch ~ averageAgeOfComponent + percentOfMalesInComponent + componentTotalNodes, data=tr_data, family=binomial)
+fit2 = glm(hasMatch ~ averageAgeOfComponent + percentOfMalesInComponent + averageImpraceOfComponent + componentTotalNodes, data=tr_data, family=binomial)
 ```
 
 Logistic Regression was used here as well with the same threshold.
@@ -208,6 +230,56 @@ auc(roc_obj2)
 plot(roc_obj2, main="ROC", xlim=c(1,0), ylim=c(0,1), col="red4")
 ```
 
+### Predictions using Classification Trees
+
+We tried to make predictions using the same predictors that were used in the Logistic Regression predictions.
+
+```{r}
+fit = rpart(hasMatch ~ age + gender + race + imprace, dat = tr_data, method = "class", control=rpart.control(minsplit=5, minbucket=3, cp=0.01))
+prp(fit, extra=106, varlen= 0,faclen=0, main = "", box.col = c("paleturquoise", "pink")[fit$frame$yval])
+```
+
+This is the accuracy for the Classification Tree using node attributes.
+
+```{r}
+predicted = predict(fit, te_data, type = "class")
+actual = te_data$hasMatch
+table(actual, predicted)
+mean(actual == predicted)
+```
+
+The AUC of this model is terrible and under .50.
+
+```{r}
+roc_obj = roc(actual, as.numeric(predicted) - 1)
+auc(roc_obj)
+plot(roc_obj, main="ROC", xlim=c(1,0), ylim=c(0,1), col="red4")
+```
+
+This is the second Classification Tree that uses graph component aggregates.
+
+```{r}
+fit2 = rpart(hasMatch ~ averageAgeOfComponent + percentOfMalesInComponent + averageImpraceOfComponent + componentTotalNodes, dat = tr_data, method = "class", control=rpart.control(minsplit=1, minbucket=1, cp=0.01))
+prp(fit2, extra=106, varlen= 0,faclen=0, main = "", box.col = c("paleturquoise", "pink")[fit$frame$yval])
+```
+
+The accuracy for this model using a confusion matrix is the same as the above model.
+
+```{r}
+predicted = predict(fit2, te_data, type = "class")
+actual = te_data$hasMatch
+table(actual, predicted)
+mean(actual == predicted)
+```
+
+The AUC for this model is also very poor and it is only .51.
+
+```{r}
+roc_obj2 = roc(actual, as.numeric(predicted) - 1)
+auc(roc_obj2)
+plot(roc_obj2, main="ROC", xlim=c(1,0), ylim=c(0,1), col="red4")
+```
+
 ### Conclusion
 
-From what could be seen, the AUC for the prediction that uses graph component aggregates appears to be commonly higher. This has been tested with a couple of different seeds and there were only a couple of occurrances where the AUC for using node information instead of graph aggregates had a higher AUC. This shows that using the AUC has a higher potential of being more accurate and effective in making predictions.
+From what could be seen, the AUC for the prediction that uses graph component aggregates appears to be commonly higher in the case of Logistic Regression. This has been tested with a couple of different seeds and there were only a couple of occurrances where the AUC for using node information instead of graph aggregates had a higher AUC. Classification Trees were not very effective when making predictions however that can be because of this particular data set. This shows that using the AUC has a higher potential of being more accurate and effective in making predictions when using Logistic Regression.
